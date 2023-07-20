@@ -2326,7 +2326,7 @@ import * as pako from 'pako';
    * NetCDF (MINC 1.0) file.
    */
   export function hdf5Loader (data) {
-    var debug = true;
+    var debug = false;
 
     var root;
     try {
