@@ -72,8 +72,8 @@ export class Viewer extends React.Component {
         const xSize = this.props.headers.xspace.space_length;
         const zSize = this.props.headers.zspace.space_length;
         // (x, y, z) = (x, z, y)
-        //return y + zSize * (z  + (x * xSize));
-        return z + ySize * (y + (x * xSize));
+        return y + zSize * (z  + (x * xSize));
+        // return z + ySize * (y + (x * xSize));
     }
 
     arrayValue = (x, y, z) => {
@@ -114,11 +114,13 @@ export class Viewer extends React.Component {
       //gl.endFrameEXP();
     }
 
-    scale(val, min, max) {
-        if (min === null|| max === null) {
+    scale(val) {
+        if (this.state.minIntensity === null|| this.state.maxIntensity=== null) {
             return;
             throw new Error('No min or max');
         }
+        const min = this.state.minIntensity;
+        const max = this.state.maxIntensity;
         const range = max-min;
         return (val-min) / range;
     }
@@ -138,7 +140,10 @@ export class Viewer extends React.Component {
         const pixelYSize = ctx.gl.drawingBufferHeight / this.props.headers.yspace.space_length;
 
         
-        const valRGB = val * 255;
+         // test data goes 0-546, hack: divided by 2 to get close to
+         // 0-256
+        // const valRGB = val / 2; 
+        const valRGB = this.scale(val)*256;
         ctx.fillStyle = "rgba(" + valRGB + ", " + valRGB + "," + valRGB + ", 1)";
         // ctx.fillStyle = "rgba(128, 128, 128, 1)";
         // console.log(ctx.fillStyle);
