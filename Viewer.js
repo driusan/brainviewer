@@ -14,20 +14,14 @@ export class Viewer extends React.Component {
             maxVal: 0,
         };
 
-        if (props.headers) {
-            if (props.headers.datatype === "float32") {
-                const dv = new Float32Array(this.props.rawData);
-                this.setState({
-                    dataview: dv,
-                    maxVal: props.headers.zspace ? props.headers.zspace.space_length : 0,
-                });
-                console.log("new dataview");
-            } else {
-                console.log("unhandled datatype");
-            }
-        } else {
+        if (!props.headers) {
             console.log('No headers');
+            return;
         }
+        let dv;
+        console.log('setting state');
+        this.setState({dataview: new DataView(props.rawData)});
+
         this.onContextCreate = this.onContextCreate.bind(this); // Bind the method to the correct context
     }
 
@@ -77,7 +71,6 @@ export class Viewer extends React.Component {
     }
 
     arrayValue = (x, y, z) => {
-        // console.log('this',this);
         if (!this.state.dataview) {
             return;
         }
@@ -124,7 +117,7 @@ export class Viewer extends React.Component {
     }
 
     drawPixel = (x, y) => {
-        const val = this.arrayValue(x, y, 100);
+        const val = this.arrayValue(x, y, this.state.sliderValue);
         if (!val || !this.state.minIntensity || !this.state.maxIntensity) {
             return;
         }

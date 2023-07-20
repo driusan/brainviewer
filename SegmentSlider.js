@@ -4,7 +4,7 @@ import { View, Text, Slider, Dimensions } from 'react-native';
 export function SegmentSlider(props) {
     // Calculate the width based on the screen dimensions
     const { width } = Dimensions.get('window');
-    const sliderWidth = width * 0.7; // 70% of screen width
+    const sliderWidth = width * 0.9; // 70% of screen width
 
   	return (
 	    <>
@@ -12,11 +12,19 @@ export function SegmentSlider(props) {
 				<Text>{props.label}</Text>
 			</View>
 			<Slider
+				aria-label="Always visible"
+ 				step={1}
 				value={props.val}
 				maximumValue={parseInt(props.max, 10)}
 				onValueChange={(newValue) => props.onSliderChange(newValue)}
-                style={{ width: sliderWidth }} // Set the width using the style prop
+				style={{ width: sliderWidth }}
+				valueLabelDisplay="on"
 			/>
+            <View>
+                <Text>
+                    {props.val}
+                </Text>
+            </View>
 	    </>
   	);
 }
