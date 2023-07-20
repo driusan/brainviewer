@@ -60,7 +60,7 @@ export default function App() {
     req.onload = (evt) => {
         var result = hdf5Loader(req.response);
         setRawData(result.raw_data);
-        setHeaderData(result.header_text);
+        setHeaderData(JSON.parse(result.header_text));
     };
     req.send(null);
   }, [token]);
