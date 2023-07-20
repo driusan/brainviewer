@@ -2,22 +2,33 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { GLView } from 'expo-gl';
 import Expo2DContext from "expo-2d-context";
+import { SegmentSlider } from './SegmentSlider';
 
 
 export class Viewer extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {};
+        this.state = {
+            dataview: null,
+            sliderValue: 0,
+            maxVal: 0,
+        };
+
         if (!props.headers) {
             console.log('No headers');
             return;
         }
         let dv;
         console.log('setting state');
-        this.state = {
-            dataview: new DataView(props.rawData),
-        };
+        this.setState({dataview: new DataView(props.rawData)});
+
+        this.onContextCreate = this.onContextCreate.bind(this); // Bind the method to the correct context
     }
+
+    handleSliderChange = (newValue) => {
+        this.setState({ sliderValue: newValue });
+    };
+
     render() {
         if( !this.props.headers) {
             return <View><Text>Loading headers..</Text></View>;
@@ -25,13 +36,26 @@ export class Viewer extends React.Component {
         if (!this.props.rawData){
             return <View><Text>Loading raw data..</Text></View>
         }
+
+        var maxVal = 100;
+        if (this.props.headers.zspace) {
+            maxVal = this.props.headers.zspace.space_length;
+        }
+
         console.log('rendering');///, this.state);
         this.drawFrame();
+
         return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <View style={{width: 350, height: 400, backgroundColor: 'pink'}}>
                     <GLView style={{ width: 350, height: 400, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreate} />
                 </View>
+                <SegmentSlider
+                  val={this.state.sliderValue}
+                  max={maxVal}
+                  label='Z Segment:'
+                  onSliderChange={this.handleSliderChange}
+                />
                 <Text>Foo</Text>
                 </View>
                );
@@ -47,7 +71,6 @@ export class Viewer extends React.Component {
     }
 
     arrayValue = (x, y, z) => {
-        // console.log('this',this);
         if (!this.state.dataview) {
             return;
         }
@@ -94,7 +117,7 @@ export class Viewer extends React.Component {
     }
 
     drawPixel = (x, y) => {
-        const val = this.arrayValue(x, y, 100);
+        const val = this.arrayValue(x, y, this.state.sliderValue);
         if (!val || !this.state.minIntensity || !this.state.maxIntensity) {
             return;
         }
