@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import React, {useState, useEffect} from 'react';
-// import nifti from 'nifti-reader-js';
+import { hdf5Loader } from './MincLoader';
+import { Buffer } from 'buffer';
 
 export default function App() {
   const [token, setToken] = useState(null);
@@ -10,10 +11,10 @@ export default function App() {
   useEffect(() => {
     // Get API key
     var loginData = {
-      username : // username 
-      password : // password
+      username : 'admin',
+      password : 'demo20!7'
     };
-    fetch('https://cbeaudoin-test-25.loris.ca/api/v0.0.3/login/', {
+    fetch('https://demo-25-0.loris.ca/api/v0.0.3/login/', {
       method: 'POST',
       body: JSON.stringify(loginData),
       headers: {
@@ -35,35 +36,48 @@ export default function App() {
     if (!token) {
       return;
     }
+    //    Fetch in react native does not support ArrayBuffer
+    /*
     const headers = { Authorization: 'Bearer ' + token };
-    fetch('https://cbeaudoin-test-25.loris.ca/api/v0.0.3/candidates/400184/V2/images/Loris-MRI_400184_V2_fMRI_001.nii', {headers})
-    .then((response) => response.text())
-    .then((data) => {
-      console.log('a');
-      setReturnData(data);
+    fetch('https://demo-25-0.loris.ca/api/v0.0.3/candidates/587630/V1/images/demo_587630_V1_t2_001_t2-defaced_001.mnc', {headers})
+    .then((response) => response.blob())
+    .then(async (data) => {
+      let arrayBufData = await blobToBuffer(data);
+      console.log(typeof(arrayBufData));
+      console.log(typeof(data));
+      setReturnData(arrayBufData);
+      hdf5Loader(arrayBufData);
     })
     .catch((err) => {
-      console.log('here2'+err.message);
+      console.log(err.message);
     });
+    */
+    const req = new XMLHttpRequest();
+    req.open('GET', 'https://demo-25-0.loris.ca/api/v0.0.3/candidates/587630/V1/images/demo_587630_V1_t2_001_t2-defaced_001.mnc', true);
+    req.responseType = "arraybuffer";
+    req.setRequestHeader('Authorization', 'Bearer ' + token);
+    req.onload = (evt) => {
+        console.log(typeof req.response);
+        console.log(req.response);
+        hdf5Loader(req.response);
+
+    };
+    req.send(null);
   }, [token]);
 
-  // var niftiHeader = null,
-  //     niftiImage = null,
-  //     niftiExt = null;
-
-  // if (nifti.isCompressed(returnData)) {
-  //     returnData = nifti.decompress(returnData);
-  // }
-
-  // if (nifti.isNIFTI(returnData)) {
-  //     niftiHeader = nifti.readHeader(returnData);
-  //     console.log(niftiHeader.toFormattedString());
-  //     niftiImage = nifti.readImage(niftiHeader, returnData);
-      
-  //     if (nifti.hasExtension(niftiHeader)) {
-  //         niftiExt = nifti.readExtensionData(niftiHeader, returnData);
-  //     }
-  // }
+  function blobToBuffer(blob) {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            console.log('onload blobToBuffer');
+              const data = reader.result.slice(reader.result.indexOf('base64,') + 7);
+              console.log('Resolving promise');
+              resolve(Buffer.from(data, 'base64'));
+          };
+          reader.readAsDataURL(blob);
+      });
+  }
 
   return (
     <View style={styles.container}>
@@ -72,6 +86,7 @@ export default function App() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
