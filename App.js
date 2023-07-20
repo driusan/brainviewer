@@ -2,17 +2,19 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import React, {useState, useEffect} from 'react';
 import { hdf5Loader } from './MincLoader';
-import { Buffer } from 'buffer';
+import { Viewer } from './Viewer';
 
 export default function App() {
   const [token, setToken] = useState(null);
   const [returnData, setReturnData] = useState(null);
+  const [rawData, setRawData] = useState(null);
+  const [headerData, setHeaderData] = useState(null);
 
   useEffect(() => {
     // Get API key
     var loginData = {
-      username : '',
-      password : ''
+      username : // username
+      password : // password
     };
     fetch('https://demo-25-0.loris.ca/api/v0.0.3/login/', {
       method: 'POST',
@@ -23,11 +25,10 @@ export default function App() {
     })
     .then((response) => response.json())
     .then((data) => {
-      console.log(data);
       setToken(data.token);
     })
     .catch((err) => {
-      console.log('Here' + err.message);
+      console.log(err.message);
     });
   }, []);
 
@@ -57,31 +58,17 @@ export default function App() {
     req.responseType = "arraybuffer";
     req.setRequestHeader('Authorization', 'Bearer ' + token);
     req.onload = (evt) => {
-        console.log(typeof req.response);
-        console.log(req.response);
-        hdf5Loader(req.response);
-
+        var result = hdf5Loader(req.response);
+        setRawData(result.raw_data);
+        setHeaderData(result.header_text);
     };
     req.send(null);
   }, [token]);
 
-  function blobToBuffer(blob) {
-      return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = reject;
-          reader.onload = () => {
-            console.log('onload blobToBuffer');
-              const data = reader.result.slice(reader.result.indexOf('base64,') + 7);
-              console.log('Resolving promise');
-              resolve(Buffer.from(data, 'base64'));
-          };
-          reader.readAsDataURL(blob);
-      });
-  }
-
   return (
     <View style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
+      <Viewer rawData={rawData} headers={headerData} />
       <StatusBar style="auto" />
     </View>
   );

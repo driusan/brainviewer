@@ -4,7 +4,13 @@ import { GLView } from 'expo-gl';
 import Expo2DContext from "expo-2d-context";
 
 
-export default function App() {
+export function Viewer(props) {
+  if( !props.headers) {
+    return <View><Text>Loading headers..</Text></View>;
+  }
+  if (!props.rawData){
+    return <View><Text>Loading raw data..</Text></View>
+  }
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <View style={{width: 350, height: 400, backgroundColor: 'pink'}}>
