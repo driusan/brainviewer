@@ -13,8 +13,8 @@ export default function App() {
   useEffect(() => {
     // Get API key
     var loginData = {
-      username : //username,
-      password : //password
+      username : 'admin',
+      password : 'demo20!7'
     };
     fetch('https://demo-25-0.loris.ca/api/v0.0.3/login/', {
       method: 'POST',
@@ -60,7 +60,7 @@ export default function App() {
     req.onload = (evt) => {
         var result = hdf5Loader(req.response);
         setRawData(result.raw_data);
-        setHeaderData(JSON.parse(result.header_text));
+        setHeaderData(result.header_text);
     };
     req.send(null);
   }, [token]);

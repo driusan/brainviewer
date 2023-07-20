@@ -8,23 +8,26 @@ import { SegmentSlider } from './SegmentSlider';
 export class Viewer extends React.Component {
     constructor(props) {
         super(props);
-        if (!props.headers) {
-            console.log('No headers');
-            return;
-        }
-        let dv;
-        if (props.headers.datatype == "float32") {
-            dv = new Float32Array(this.props.rawData);
-            console.log("new dataview");
-        } else {
-            console.log("unhandled datatype");
-        }
-        console.log('setting state');
         this.state = {
-            dataview: dv,
+            dataview: null,
             sliderValue: 0,
+            maxVal: 0,
         };
 
+        if (props.headers) {
+            if (props.headers.datatype === "float32") {
+                const dv = new Float32Array(this.props.rawData);
+                this.setState({
+                    dataview: dv,
+                    maxVal: props.headers.zspace ? props.headers.zspace.space_length : 0,
+                });
+                console.log("new dataview");
+            } else {
+                console.log("unhandled datatype");
+            }
+        } else {
+            console.log('No headers');
+        }
         this.onContextCreate = this.onContextCreate.bind(this); // Bind the method to the correct context
     }
 
@@ -39,7 +42,11 @@ export class Viewer extends React.Component {
         if (!this.props.rawData){
             return <View><Text>Loading raw data..</Text></View>
         }
-        console.log('rendering', this.state);
+        var maxVal = 100;
+        if (this.props.headers.zspace) {
+            maxVal = this.props.headers.zspace.space_length;
+        }
+
         return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <View style={{width: 350, height: 400, backgroundColor: 'pink'}}>
@@ -47,8 +54,8 @@ export class Viewer extends React.Component {
                 </View>
                 <SegmentSlider
                   val={this.state.sliderValue}
-                  max={this.props.headers.zspace.space_length}
-                  label='X Segment:'
+                  max={maxVal}
+                  label='Z Segment:'
                   onSliderChange={this.handleSliderChange}
                 />
                 <Text>Foo</Text>
@@ -75,7 +82,7 @@ export class Viewer extends React.Component {
             console.warn('No xspace');
             return;
         }
-        const idx = arrayIndex(x, y, z);
+        const idx = this.arrayIndex(x, y, z);
         return this.state.dataview[idx];
     }
 
@@ -99,7 +106,7 @@ export class Viewer extends React.Component {
     }
 
     drawPixel = (x, y) => {
-        console.log('x, y = ?', x, y, this.arrayValue(x, y, 100));
+        console.log('x, y = ?', x, y, this.arrayValue(x, y, this.state.sliderValue));
     }
     onContextCreate = (gl) => {
       console.log('on context create');
