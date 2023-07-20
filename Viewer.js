@@ -10,8 +10,10 @@ export class Viewer extends React.Component {
         super(props);
         this.state = {
             dataview: null,
-            sliderValue: 0,
+            sliderValue: 100,
             maxVal: 0,
+            maxIntensity: null,
+            minIntensity: null,
         };
 
         if (!props.headers) {
@@ -27,6 +29,7 @@ export class Viewer extends React.Component {
 
     handleSliderChange = (newValue) => {
         this.setState({ sliderValue: newValue });
+        this.drawFrame();
     };
 
     render() {
@@ -43,7 +46,7 @@ export class Viewer extends React.Component {
         }
 
         console.log('rendering');///, this.state);
-        this.drawFrame();
+        //this.drawFrame();
 
         return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
@@ -67,7 +70,10 @@ export class Viewer extends React.Component {
         }
         const ySize = this.props.headers.yspace.space_length;
         const xSize = this.props.headers.xspace.space_length;
-        return z + ySize * (y + x * xSize);
+        const zSize = this.props.headers.zspace.space_length;
+        // (x, y, z) = (x, z, y)
+        //return y + zSize * (z  + (x * xSize));
+        return z + ySize * (y + (x * xSize));
     }
 
     arrayValue = (x, y, z) => {
@@ -79,7 +85,7 @@ export class Viewer extends React.Component {
             return;
         }
         const idx = this.arrayIndex(x, y, z);
-        return this.state.dataview.getFloat32(idx);
+        return this.state.dataview.getFloat32(idx*4, true);
     }
 
     drawFrame = () => {
@@ -94,6 +100,7 @@ export class Viewer extends React.Component {
             for(let y = 0; y < ySize; y++) {
                 this.drawPixel(x, y);
             }
+            // console.log('row', x);
         }
 
         console.log('flushing');
@@ -108,7 +115,7 @@ export class Viewer extends React.Component {
     }
 
     scale(val, min, max) {
-        if (!min || !max) {
+        if (min === null|| max === null) {
             return;
             throw new Error('No min or max');
         }
@@ -118,7 +125,8 @@ export class Viewer extends React.Component {
 
     drawPixel = (x, y) => {
         const val = this.arrayValue(x, y, this.state.sliderValue);
-        if (!val || !this.state.minIntensity || !this.state.maxIntensity) {
+        if (typeof(val) == "undefined" || this.state.minIntensity === null || this.state.maxIntensity === null) {
+            //console.log(val, this.state.minIntensity, this.state.maxIntensity);
             return;
         }
         if (!this.state.ctx) {
@@ -129,12 +137,17 @@ export class Viewer extends React.Component {
         const pixelXSize = ctx.gl.drawingBufferWidth / this.props.headers.xspace.space_length;
         const pixelYSize = ctx.gl.drawingBufferHeight / this.props.headers.yspace.space_length;
 
+        
         const valRGB = val * 255;
         ctx.fillStyle = "rgba(" + valRGB + ", " + valRGB + "," + valRGB + ", 1)";
+        // ctx.fillStyle = "rgba(128, 128, 128, 1)";
         // console.log(ctx.fillStyle);
         // console.log(pixelXSize, pixelYSize);
+        // console.log(ctx.gl.drawingBufferWidth, this.props.headers.xspace.space_length, (ctx.gl.drawingBufferWidth / this.props.headers.xspace.space_length), 'fillrect', x*pixelXSize, y*pixelYSize, pixelXSize, pixelYSize);
+
+        // console.log('filling', x, y);
         ctx.fillRect(x*pixelXSize, y*pixelYSize, pixelXSize, pixelYSize);
-        //console.log('x, y = ?', x, y, this.scale(val, this.state.minIntensity, this.state.maxIntensity));
+        // console.log('x, y = ?', x, y, this.scale(val, this.state.minIntensity, this.state.maxIntensity));
     }
     onContextCreate = (gl) => {
       console.log('on context create');
@@ -146,7 +159,7 @@ export class Viewer extends React.Component {
             let min = null;
             let max = null;
             for(let i = 0; i < this.props.rawData.byteLength; i += 4) {
-                const val = dv.getFloat32(i);
+                const val = dv.getFloat32(i, true);
                 if (min == null || val < min) {
                     min = val;
                 }
@@ -154,6 +167,7 @@ export class Viewer extends React.Component {
                     max = val;
                 }
             }
+            console.log('min, max', min, max);
             this.setState({ctx: ctx, dataview: new DataView(this.props.rawData), minIntensity: min, maxIntensity: max, gl: gl});
             console.log('draw frame');
             this.drawFrame();
