@@ -44,11 +44,11 @@ export class Viewer extends React.Component {
       const xsize = this.props.headers.xspace.space_length;
       const ysize = this.props.headers.yspace.space_length;
       const zsize = this.props.headers.zspace.space_length;
-      const colorUniformLocation = this.state.colorUniformLocation; 
       const intensities = [];
-
+      let colorUniformLocation;
       switch (plane) {
         case 'x':
+          colorUniformLocation = this.state.colorUniformLocationX; 
           for (let y = 0; y < ysize; y++) {
             for(let z = 0; z < zsize; z++) {
               const i = y*zsize + z;
@@ -56,15 +56,19 @@ export class Viewer extends React.Component {
               // FIXME: Do this math in the shader.
               const val = (intensity-this.state.data.min) / (this.state.data.max-this.state.data.min);
               if (y === Math.round(this.state.yVal) || z == Math.round(this.state.zVal)) {
-                  this.state.gl.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
+                  this.state.glX.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
               } else {
-                  this.state.gl.uniform4f(colorUniformLocation, val, val, val, 1);
+                  this.state.glX.uniform4f(colorUniformLocation, val, val, val, 1);
               }
 
-              this.state.gl.drawArrays(this.state.gl.POINTS, i, 1);
+              this.state.glX.drawArrays(this.state.glX.POINTS, i, 1);
             }
           }
+          this.state.glX.flush();
+          this.state.glX.endFrameEXP();
+          break;
         case 'y':
+          colorUniformLocation = this.state.colorUniformLocationY; 
           for (let x = 0; x < xsize; x++) {
             for(let z = 0; z < zsize; z++) {
               const i = x*zsize + z;
@@ -72,15 +76,19 @@ export class Viewer extends React.Component {
               // FIXME: Do this math in the shader.
               const val = (intensity-this.state.data.min) / (this.state.data.max-this.state.data.min);
               if (x === Math.round(this.state.xVal) || z == Math.round(this.state.zVal)) {
-                  this.state.gl.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
+                  this.state.glY.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
               } else {
-                  this.state.gl.uniform4f(colorUniformLocation, val, val, val, 1);
+                  this.state.glY.uniform4f(colorUniformLocation, val, val, val, 1);
               }
 
-              this.state.gl.drawArrays(this.state.gl.POINTS, i, 1);
+              this.state.glY.drawArrays(this.state.glY.POINTS, i, 1);
             }
           }
+          this.state.glY.flush();
+          this.state.glY.endFrameEXP();
+          break;
         case 'z':
+          colorUniformLocation = this.state.colorUniformLocationZ; 
           for (let x = 0; x < xsize; x++) {
             for(let y = 0; y < ysize; y++) {
               const i = x*ysize + y;
@@ -88,17 +96,18 @@ export class Viewer extends React.Component {
               // FIXME: Do this math in the shader.
               const val = (intensity-this.state.data.min) / (this.state.data.max-this.state.data.min);
               if (x === Math.round(this.state.xVal) || y == Math.round(this.state.yVal)) {
-                  this.state.gl.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
+                  this.state.glZ.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
               } else {
-                  this.state.gl.uniform4f(colorUniformLocation, val, val, val, 1);
+                  this.state.glZ.uniform4f(colorUniformLocation, val, val, val, 1);
               }
 
-              this.state.gl.drawArrays(this.state.gl.POINTS, i, 1);
+              this.state.glZ.drawArrays(this.state.glZ.POINTS, i, 1);
             }
           }
+          this.state.glZ.flush();
+          this.state.glZ.endFrameEXP();
+          break;
       }
-      this.state.gl.flush();
-      this.state.gl.endFrameEXP();
     }
 
     render() {
@@ -136,14 +145,16 @@ export class Viewer extends React.Component {
                         ({nativeEvent}) => {
                             const ysize = this.props.headers.yspace.space_length;
                             const zsize = this.props.headers.zspace.space_length;
-                            const scaledY = nativeEvent.locationY / viewWidth;
-                            const scaledZ = nativeEvent.locationZ / viewHeight;
+                            const scaledY = nativeEvent.locationX / viewWidth;
+                            const scaledZ = nativeEvent.locationY / viewHeight;
                             this.setState({
                                 yVal: scaledY * ysize,
                                 zVal: scaledZ * zsize,
                             });
                             console.log(nativeEvent.locationY, nativeEvent.locationZ, scaledY, scaledZ);
                             requestAnimationFrame(() => this.drawPanel('x'));
+                            requestAnimationFrame(() => this.drawPanel('y'));
+                            requestAnimationFrame(() => this.drawPanel('z'));
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateX} />
@@ -162,13 +173,15 @@ export class Viewer extends React.Component {
                             const xsize = this.props.headers.xspace.space_length;
                             const zsize = this.props.headers.zspace.space_length;
                             const scaledX = nativeEvent.locationX / viewWidth;
-                            const scaledZ = nativeEvent.locationZ / viewHeight;
+                            const scaledZ = nativeEvent.locationY / viewHeight;
                             this.setState({
                                 xVal: scaledX * xsize,
                                 zVal: scaledZ * zsize,
                             });
                             console.log(nativeEvent.locationX, nativeEvent.locationZ, scaledX, scaledZ);
+                            requestAnimationFrame(() => this.drawPanel('x'));
                             requestAnimationFrame(() => this.drawPanel('y'));
+                            requestAnimationFrame(() => this.drawPanel('z'));
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateY} />
@@ -275,7 +288,17 @@ export class Viewer extends React.Component {
 
     onContextCreate = (gl, plane) => {
         const data = this.preprocess(this.props.rawData);
-        this.setState({data: data, gl: gl, dataview: new DataView(this.props.rawData)});
+        switch (plane) {
+          case 'x':
+            this.setState({data: data, glX: gl, dataview: new DataView(this.props.rawData)});
+            break;
+          case 'y':
+            this.setState({data: data, glY: gl, dataview: new DataView(this.props.rawData)});
+            break;
+          case 'z':
+            this.setState({data: data, glZ: gl, dataview: new DataView(this.props.rawData)});
+            break;
+        }
 
         // this.setState({ctx: ctx, dataview: new DataView(this.props.rawData), minIntensity: min, maxIntensity: max, gl: gl});
         console.log('draw frame');
@@ -342,6 +365,7 @@ export class Viewer extends React.Component {
                     positions.push(z);
                 }
             }
+            break;
           case 'y':
             xsize = this.props.headers.xspace.space_length;
             zsize = this.props.headers.zspace.space_length;
@@ -351,6 +375,7 @@ export class Viewer extends React.Component {
                     positions.push(z);
                 }
             }
+            break;
           case 'z':
             xsize = this.props.headers.xspace.space_length;
             ysize = this.props.headers.yspace.space_length;
@@ -360,6 +385,7 @@ export class Viewer extends React.Component {
                     positions.push(y);
                 }
             }
+            break;
         }
         //gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
         //console.log('u_resolition', xsize, ysize);
@@ -380,15 +406,18 @@ export class Viewer extends React.Component {
           case 'x':
             gl.uniform2f(resolutionUniformLocation, ysize, zsize);
             console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
-            gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / ysize );
+            gl.uniform1f(pixelSizeUniformLocation, 10 );
+            break;
           case 'y':
             gl.uniform2f(resolutionUniformLocation, xsize, zsize);
             console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
-            gl.uniform1f(pixelSizeUniformLocation, 5.0 );
+            gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
+            break;
           case 'z':
             gl.uniform2f(resolutionUniformLocation, xsize, ysize);
             console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
             gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
+            break;
         }
 
         gl.enableVertexAttribArray(positionAttributeLocation);
@@ -407,7 +436,17 @@ export class Viewer extends React.Component {
 
         gl.clear(gl.COLOR_BUFFER_BIT);
         var colorUniformLocation = gl.getUniformLocation(program, "u_color");
-        this.setState({colorUniformLocation: colorUniformLocation});
+        switch (plane) {
+          case 'x': 
+            this.setState({colorUniformLocationX: colorUniformLocation});
+            break;
+          case 'y': 
+            this.setState({colorUniformLocationY: colorUniformLocation});
+            break;
+          case 'z': 
+            this.setState({colorUniformLocationZ: colorUniformLocation});
+            break;
+        }
         return;
     }
 }
