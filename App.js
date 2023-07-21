@@ -38,21 +38,6 @@ export default function App() {
       return;
     }
     //    Fetch in react native does not support ArrayBuffer
-    /*
-    const headers = { Authorization: 'Bearer ' + token };
-    fetch('https://demo-25-0.loris.ca/api/v0.0.3/candidates/587630/V1/images/demo_587630_V1_t2_001_t2-defaced_001.mnc', {headers})
-    .then((response) => response.blob())
-    .then(async (data) => {
-      let arrayBufData = await blobToBuffer(data);
-      console.log(typeof(arrayBufData));
-      console.log(typeof(data));
-      setReturnData(arrayBufData);
-      hdf5Loader(arrayBufData);
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
-    */
     const req = new XMLHttpRequest();
     req.open('GET', 'https://demo-25-0.loris.ca/api/v0.0.3/candidates/587630/V1/images/demo_587630_V1_t2_001_t2-defaced_001.mnc', true);
     req.responseType = "arraybuffer";
