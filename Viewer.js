@@ -13,7 +13,6 @@ export class Viewer extends React.Component {
             xVal: 100,
             yVal: 100,
             zVal: 100,
-            maxVal: 0,
             maxIntensity: null,
             minIntensity: null,
         };
@@ -32,9 +31,13 @@ export class Viewer extends React.Component {
     }
 
     handleSliderChange = (plane, newValue) => {
-        this.setState({ plane: newValue });
-        this.drawPanel(plane);
-        requestAnimationFrame(this.drawPanel);
+        const newState = {};
+        newState[plane] = newValue;
+        this.setState(newState);
+
+        requestAnimationFrame(() => this.drawPanel('x'));
+        requestAnimationFrame(() => this.drawPanel('y'));
+        requestAnimationFrame(() => this.drawPanel('z'));
     };
 
     drawPanel = (plane) => {
@@ -79,7 +82,7 @@ export class Viewer extends React.Component {
           }
         case 'z':
           for (let x = 0; x < xsize; x++) {
-            for(let y = 0; y < ysiye; y++) {
+            for(let y = 0; y < ysize; y++) {
               const i = x*ysize + y;
               const intensity = this.arrayValue(x, y, this.state.zVal);
               // FIXME: Do this math in the shader.
@@ -136,11 +139,11 @@ export class Viewer extends React.Component {
                             const scaledY = nativeEvent.locationY / viewWidth;
                             const scaledZ = nativeEvent.locationZ / viewHeight;
                             this.setState({
-                                yValue: scaledY * ysize,
-                                zValue: scaledZ * zsize,
+                                yVal: scaledY * ysize,
+                                zVal: scaledZ * zsize,
                             });
                             console.log(nativeEvent.locationY, nativeEvent.locationZ, scaledY, scaledZ);
-                            requestAnimationFrame(this.drawPanel);
+                            requestAnimationFrame(() => this.drawPanel('x'));
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateX} />
@@ -161,11 +164,11 @@ export class Viewer extends React.Component {
                             const scaledX = nativeEvent.locationX / viewWidth;
                             const scaledZ = nativeEvent.locationZ / viewHeight;
                             this.setState({
-                                xValue: scaledX * xsize,
-                                zValue: scaledZ * zsize,
+                                xVal: scaledX * xsize,
+                                zVal: scaledZ * zsize,
                             });
                             console.log(nativeEvent.locationX, nativeEvent.locationZ, scaledX, scaledZ);
-                            requestAnimationFrame(this.drawPanel);
+                            requestAnimationFrame(() => this.drawPanel('y'));
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateY} />
@@ -186,11 +189,13 @@ export class Viewer extends React.Component {
                             const scaledX = nativeEvent.locationX / viewWidth;
                             const scaledY = nativeEvent.locationY / viewHeight;
                             this.setState({
-                                xValue: scaledX * xsize,
-                                yValue: scaledY * ysize,
+                                xVal: scaledX * xsize,
+                                yVal: scaledY * ysize,
                             });
                             console.log(nativeEvent.locationX, nativeEvent.locationY, scaledX, scaledY);
-                            requestAnimationFrame(this.drawPanel);
+                            requestAnimationFrame(() => this.drawPanel('x'));
+                            requestAnimationFrame(() => this.drawPanel('y'));
+                            requestAnimationFrame(() => this.drawPanel('z'));
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateZ} />
@@ -203,8 +208,6 @@ export class Viewer extends React.Component {
                   label='Z Segment:'
                   onSliderChange={this.handleSliderChange}
                 />
-
-                <Text>Foo</Text>
                 </View>
                );
     }
@@ -381,15 +384,13 @@ export class Viewer extends React.Component {
           case 'y':
             gl.uniform2f(resolutionUniformLocation, xsize, zsize);
             console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
-            gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
+            gl.uniform1f(pixelSizeUniformLocation, 5.0 );
           case 'z':
             gl.uniform2f(resolutionUniformLocation, xsize, ysize);
             console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
             gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
         }
-        gl.uniform2f(resolutionUniformLocation, xsize, ysize);
-        console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
-        gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
+
         gl.enableVertexAttribArray(positionAttributeLocation);
 
         // Bind the position buffer.
