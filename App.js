@@ -13,8 +13,8 @@ export default function App() {
   useEffect(() => {
     // Get API key
     var loginData = {
-      username : 'admin',
-      password : 'demo20!7'
+      username : //
+      password : //
     };
     fetch('https://demo-25-0.loris.ca/api/v0.0.3/login/', {
       method: 'POST',
