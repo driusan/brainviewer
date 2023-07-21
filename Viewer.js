@@ -68,7 +68,6 @@ export class Viewer extends React.Component {
         }
 
         console.log('rendering');///, this.state);
-        //this.drawFrame();
 
         return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
@@ -111,43 +110,6 @@ export class Viewer extends React.Component {
         }
         const idx = this.arrayIndex(x, y, z);
         return this.state.dataview.getFloat32(idx*4, true);
-    }
-
-    drawFrame = () => {
-        if (!this.props.headers.xspace) {
-            console.log('no xspace', typeof(this.props.headers), this.props.headers);
-            return;
-        }
-        const ySize = this.props.headers.yspace.space_length;
-        const xSize = this.props.headers.xspace.space_length;
-        console.log('size', xSize, ySize);
-        for(let x = 0; x < xSize; x++) {
-            for(let y = 0; y < ySize; y++) {
-                this.drawPixel(x, y);
-            }
-            // console.log('row', x);
-        }
-
-        console.log('flushing');
-        if (!this.state.ctx) {
-            console.log('no ctx');
-        } else {
-            this.state.ctx.flush();
-            this.state.gl.endFrameEXP();
-        }
-        console.log('flushed');
-      //gl.endFrameEXP();
-    }
-
-    scale(val) {
-        if (this.state.minIntensity === null|| this.state.maxIntensity=== null) {
-            return;
-            throw new Error('No min or max');
-        }
-        const min = this.state.minIntensity;
-        const max = this.state.maxIntensity;
-        const range = max-min;
-        return (val-min) / range;
     }
 
     preprocess = (rawdata) => {
@@ -197,7 +159,7 @@ export class Viewer extends React.Component {
       vec2 normalize_to_clipspace = normalize_to_two - 1.0;
 
       gl_Position = vec4(normalize_to_clipspace, 0, 1);
-      gl_PointSize = 6.0; 
+      gl_PointSize = u_pixelsize; 
     }
   `
   );
@@ -239,8 +201,6 @@ export class Viewer extends React.Component {
           positions.push(y);
       }
   }
-  let resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-  let pixelSizeUniformLocation = gl.getUniformLocation(program, "u_pixelsize");
   //gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
   //console.log('u_resolition', xsize, ysize);
   
@@ -254,9 +214,12 @@ export class Viewer extends React.Component {
   gl.attachShader(program, frag);
   gl.linkProgram(program);
   gl.useProgram(program);
+  let resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+  let pixelSizeUniformLocation = gl.getUniformLocation(program, "u_pixelsize");
+
   gl.uniform2f(resolutionUniformLocation, xsize, ysize);
   console.log('pointuniform', pixelSizeUniformLocation, resolutionUniformLocation);
-  gl.uniform1f(pixelSizeUniformLocation, 10.0);
+  gl.uniform1f(pixelSizeUniformLocation, gl.drawingBufferWidth / xsize );
   gl.enableVertexAttribArray(positionAttributeLocation);
 
   // Bind the position buffer.
@@ -274,24 +237,6 @@ export class Viewer extends React.Component {
   gl.clear(gl.COLOR_BUFFER_BIT);
   var colorUniformLocation = gl.getUniformLocation(program, "u_color");
   this.setState({colorUniformLocation: colorUniformLocation});
-
-  for(let i = 0; i < xsize*ysize; i++) {
-      const intensity = intensities[i];
-      if (!intensity) {
-          continue;
-      }
-      //const val = (intensity-data.min) / (data.max-data.min);
-      const val = 0.5;
-
-      // console.log('val', i, intensity, data.min, data.max, val);
-      gl.uniform4f(colorUniformLocation, val, val, val, 1);
-
-      gl.drawArrays(gl.POINTS, i, 1);
-  }
-  console.log('drew');
-
-  gl.flush();
-  gl.endFrameEXP();
 return;
     }
 }
