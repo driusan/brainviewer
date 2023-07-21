@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { GLView } from 'expo-gl';
 import Expo2DContext from "expo-2d-context";
 import { SegmentSlider } from './SegmentSlider';
@@ -10,7 +10,7 @@ export class Viewer extends React.Component {
         super(props);
         this.state = {
             dataview: null,
-            sliderValue: 100,
+            zValue: 100,
             maxVal: 0,
             maxIntensity: null,
             minIntensity: null,
@@ -28,27 +28,30 @@ export class Viewer extends React.Component {
     }
 
     handleSliderChange = (newValue) => {
-        this.setState({ sliderValue: newValue });
+        this.setState({ zValue: newValue });
         this.drawPanel();
     };
 
     drawPanel = () => {
       const xsize = this.props.headers.xspace.space_length;
       const ysize = this.props.headers.yspace.space_length;
+      const colorUniformLocation = this.state.colorUniformLocation; 
       const intensities = [];
+      console.log(this.state.xValue, this.state.yValue);
       for (let x = 0; x < xsize; x++) {
         for(let y = 0; y < ysize; y++) {
-          intensities.push(this.arrayValue(x, y, this.state.sliderValue));
-        }
-      }
-
-      var colorUniformLocation = this.state.colorUniformLocation; 
-      for(let i = 0; i < xsize*ysize; i++) {
-          const intensity = intensities[i]; 
+          const i = x*ysize + y;
+          const intensity = this.arrayValue(x, y, this.state.zValue);
+          // FIXME: Do this math in the shader.
           const val = (intensity-this.state.data.min) / (this.state.data.max-this.state.data.min);
-          this.state.gl.uniform4f(colorUniformLocation, val, val, val, 1);
+          if (x === Math.round(this.state.xValue) || y == Math.round(this.state.yValue)) {
+              this.state.gl.uniform4f(colorUniformLocation, 1.0, 0.0, 0.0, 1);
+          } else {
+              this.state.gl.uniform4f(colorUniformLocation, val, val, val, 1);
+          }
 
           this.state.gl.drawArrays(this.state.gl.POINTS, i, 1);
+        }
       }
       this.state.gl.flush();
       this.state.gl.endFrameEXP();
@@ -69,18 +72,35 @@ export class Viewer extends React.Component {
 
         console.log('rendering');///, this.state);
 
+        // FIXME: Make this dynamic
+        const viewWidth = 350;
+        const viewHeight = 400;
         return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                <View style={{width: 350, height: 400, backgroundColor: 'pink'}}>
-                    <GLView style={{ width: 350, height: 400, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreate} />
+                <View style={{width: viewWidth, height: viewHeight, backgroundColor: 'pink'}}>
+                    <Pressable onPress={
+                        ({nativeEvent}) => {
+                            const xsize = this.props.headers.xspace.space_length;
+                            const ysize = this.props.headers.yspace.space_length;
+                            const scaledX = nativeEvent.locationX / viewWidth;
+                            const scaledY = nativeEvent.locationY / viewHeight;
+                            this.setState({
+                                xValue: scaledX * xsize,
+                                yValue: scaledY * ysize,
+                            });
+                            console.log(nativeEvent.locationX, nativeEvent.locationY, scaledX, scaledY);
+                            this.drawPanel();
+                        }
+                    }>
+                    <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateX} />
+                    </Pressable>
                 </View>
                 <SegmentSlider
-                  val={this.state.sliderValue}
+                  val={this.state.zValue}
                   max={maxVal}
                   label='Z Segment:'
                   onSliderChange={this.handleSliderChange}
                 />
-                <Text>Foo</Text>
                 </View>
                );
     }
@@ -135,6 +155,8 @@ export class Viewer extends React.Component {
         }
     }
     onContextCreate = (gl) => {
+    }
+    onContextCreateX = (gl) => {
         const data = this.preprocess(this.props.rawData);
         this.setState({data: data, gl: gl, dataview: new DataView(this.props.rawData)});
 
@@ -146,7 +168,6 @@ export class Viewer extends React.Component {
 
   // Create vertex shader (shape & position)
   const vert = gl.createShader(gl.VERTEX_SHADER);
-  // FIXME: Fix gl_PointSize, should be calculated based on drawingBuferWidth/Height and xspace/yspace length
   gl.shaderSource(
     vert,
     `
@@ -158,7 +179,7 @@ export class Viewer extends React.Component {
       vec2 normalize_to_two = normalize_to_one * 2.0;
       vec2 normalize_to_clipspace = normalize_to_two - 1.0;
 
-      gl_Position = vec4(normalize_to_clipspace, 0, 1);
+      gl_Position = vec4(normalize_to_clipspace * vec2(1, -1), 0, 1);
       gl_PointSize = u_pixelsize; 
     }
   `
@@ -194,7 +215,6 @@ export class Viewer extends React.Component {
 
   const xsize = this.props.headers.xspace.space_length;
   const ysize = this.props.headers.yspace.space_length;
-  const intensities = [];
   for (let x = 0; x < xsize; x++) {
       for(let y = 0; y < ysize; y++) {
           positions.push(x);
