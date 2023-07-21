@@ -29,7 +29,7 @@ export class Viewer extends React.Component {
 
     handleSliderChange = (newValue) => {
         this.setState({ zValue: newValue });
-        this.drawPanel();
+        requestAnimationFrame(this.drawPanel);
     };
 
     drawPanel = () => {
@@ -89,7 +89,7 @@ export class Viewer extends React.Component {
                                 yValue: scaledY * ysize,
                             });
                             console.log(nativeEvent.locationX, nativeEvent.locationY, scaledX, scaledY);
-                            this.drawPanel();
+                            requestAnimationFrame(this.drawPanel);
                         }
                     }>
                     <GLView style={{ width: viewWidth, height: viewHeight, borderWidth: 2, borderColor: 'green' }} onContextCreate={this.onContextCreateX} />
