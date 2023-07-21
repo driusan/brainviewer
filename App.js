@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import React, {useState, useEffect} from 'react';
 import { hdf5Loader } from './MincLoader';
 import { Viewer } from './Viewer';
@@ -13,8 +13,8 @@ export default function App() {
   useEffect(() => {
     // Get API key
     var loginData = {
-      username : // username
-      password : // password
+      username : 'admin',
+      password : 'demo20!7'
     };
     fetch('https://demo-25-0.loris.ca/api/v0.0.3/login/', {
       method: 'POST',
@@ -51,11 +51,11 @@ export default function App() {
   }, [token]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
       <Viewer rawData={rawData} headers={headerData} />
       <StatusBar style="auto" />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -64,7 +64,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

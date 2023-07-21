@@ -16,7 +16,7 @@ export function SegmentSlider(props) {
  				step={1}
 				value={props.val}
 				maximumValue={parseInt(props.max, 10)}
-				onValueChange={(newValue) => props.onSliderChange(newValue)}
+				onValueChange={(newValue) => props.onSliderChange(props.valName, newValue)}
 				style={{ width: sliderWidth }}
 				valueLabelDisplay="on"
 			/>
