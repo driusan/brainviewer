@@ -71,9 +71,13 @@ export class Viewer extends React.Component {
         const ySize = this.props.headers.yspace.space_length;
         const xSize = this.props.headers.xspace.space_length;
         const zSize = this.props.headers.zspace.space_length;
-        // (x, y, z) = (x, z, y)
-        return y + zSize * (z  + (x * xSize));
-        // return z + ySize * (y + (x * xSize));
+        // slice order is x, z, y in our test file. This should
+        // be based on the headers and not hardcoded.
+        return y + 
+            zSize * z + 
+            zSize * x * ySize
+        //return y + zSize * (z  + (x * (xSize)));
+
     }
 
     arrayValue = (x, y, z) => {
