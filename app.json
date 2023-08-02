@@ -3,7 +3,8 @@
     "name": "BrainViewer",
     "slug": "BrainViewer",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "scheme": "com.driusan.brainviewer",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
